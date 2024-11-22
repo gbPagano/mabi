@@ -1,1 +1,1 @@
-mod servo;
+pub mod servo;
