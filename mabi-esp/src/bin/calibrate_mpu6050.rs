@@ -26,7 +26,7 @@ fn main() {
     let mut measures_acc = vec![];
     for _ in 0..2000 {
         let gyro = mpu.get_gyro().unwrap();
-        let acc = mpu.get_gyro().unwrap();
+        let acc = mpu.get_acc().unwrap();
 
         measures_gyro.push(gyro);
         measures_acc.push(acc);
