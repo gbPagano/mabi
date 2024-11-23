@@ -59,13 +59,4 @@ fn main() {
         .map(|s| s / measures_acc.len() as f32)
         .collect();
     println!("Mean acc measures: {:?}", mean_acc);
-
-    println!(
-        "const BIAS_GYRO: (f32, f32, f32) = ({}, {}, {})",
-        -mean_gyro[0], -mean_gyro[1], -mean_gyro[2]
-    );
-    println!(
-        "const BIAS_ACC: (f32, f32, f32) = ({}, {}, {})",
-        -mean_acc[0], -mean_acc[1], -mean_acc[2]
-    );
 }
