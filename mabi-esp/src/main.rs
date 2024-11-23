@@ -1,11 +1,26 @@
+use anyhow::{bail, Result};
 use embedded_hal::delay::DelayNs;
 use esp_idf_hal::delay::Ets;
 use esp_idf_hal::i2c::{I2cConfig, I2cDriver};
 use esp_idf_hal::peripherals::Peripherals;
 use libm::{atan2f, powf, sqrtf};
+use log::info;
 use mpu6050::*;
+use std::io;
+use std::net::UdpSocket;
 use std::thread;
 use std::time::Duration;
+
+use core::convert::TryInto;
+
+use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
+
+use esp_idf_svc::log::EspLogger;
+use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
+use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
+
+const SSID: &str = "Pagano-2.4GHz";
+const PASSWORD: &str = "";
 
 pub const PI: f32 = core::f32::consts::PI;
 pub const PI_180: f32 = PI / 180.0;
@@ -50,7 +65,12 @@ impl KalmanFilter {
     }
 }
 
-fn filter_complementary(curr: (f32, f32), accel_angle: (f32, f32), gyro: (f32, f32), dt: f32) -> (f32, f32) {
+fn filter_complementary(
+    curr: (f32, f32),
+    accel_angle: (f32, f32),
+    gyro: (f32, f32),
+    dt: f32,
+) -> (f32, f32) {
     let (accel_angle_x, accel_angle_y) = accel_angle;
     let (gyro_x, gyro_y) = gyro;
 
@@ -61,8 +81,13 @@ fn filter_complementary(curr: (f32, f32), accel_angle: (f32, f32), gyro: (f32, f
     (angle_x, angle_y)
 }
 
-fn main() {
+fn main() -> Result<()> {
+    esp_idf_svc::sys::link_patches();
+    EspLogger::initialize_default();
+
     let peripherals = Peripherals::take().unwrap();
+    let sys_loop = EspSystemEventLoop::take()?;
+    let nvs = EspDefaultNvsPartition::take()?;
 
     let sda = peripherals.pins.gpio21; // GPIO21 padrão para SDA no ESP32
     let scl = peripherals.pins.gpio22; // GPIO22 padrão para SCL no ESP32
@@ -77,6 +102,19 @@ fn main() {
 
     let mut kalman_filter_roll = KalmanFilter::new(0., 0.3, 0.5, 0.1);
     let mut kalman_filter_pitch = KalmanFilter::new(0., 0.3, 0.5, 0.1);
+
+    let mut wifi = BlockingWifi::wrap(
+        EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
+        sys_loop,
+    )?;
+
+    connect_wifi(&mut wifi)?;
+
+    let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
+    println!("Wifi DHCP info: {:?}", ip_info);
+
+    let server_address = "192.168.15.8:8080";
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
 
     let mut last_time = std::time::Instant::now();
     let mut last_print = std::time::Instant::now();
@@ -116,18 +154,42 @@ fn main() {
             println!("no kalman r/p: {:?}", angles);
             println!("with kalman r/p: {:?}", (angle_roll, angle_pitch));
             println!("complementary: {:?}", curr);
+
+            let message = b"hello world!";
+            let message = format!(
+                "last dt: ({}), no kalman r/p: ({}, {}), with kalman r/p: ({}, {}), complementary: ({}, {})",
+                delta_time,
+                angles.0, angles.1,
+                angle_roll, angle_pitch,
+                curr.0, curr.1
+            );
+            socket.send_to(message.as_bytes(), server_address).unwrap();
         }
 
         thread::sleep(Duration::from_millis(5));
-
     }
 }
 
+fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<()> {
+    let wifi_configuration: Configuration = Configuration::Client(ClientConfiguration {
+        ssid: SSID.try_into().unwrap(),
+        bssid: None,
+        auth_method: AuthMethod::WPA2Personal,
+        password: PASSWORD.try_into().unwrap(),
+        channel: None,
+        ..Default::default()
+    });
 
+    wifi.set_configuration(&wifi_configuration)?;
 
-        
+    wifi.start()?;
+    info!("Wifi started");
 
-           
-           
+    wifi.connect()?;
+    info!("Wifi connected");
 
-            
+    wifi.wait_netif_up()?;
+    info!("Wifi netif up");
+
+    Ok(())
+}
