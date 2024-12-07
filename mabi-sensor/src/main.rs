@@ -10,6 +10,8 @@ use std::io;
 use std::net::UdpSocket;
 use std::thread;
 use std::time::Duration;
+use bincode::serialize;
+use serde::Serialize;
 
 use core::convert::TryInto;
 
@@ -20,7 +22,7 @@ use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 
 const SSID: &str = "Pagano-2.4GHz";
-const PASSWORD: &str = "";
+const PASSWORD: &str = "roteador186!";
 
 pub const PI: f32 = core::f32::consts::PI;
 pub const PI_180: f32 = PI / 180.0;
@@ -28,6 +30,12 @@ pub const PI_180: f32 = PI / 180.0;
 const BIAS_GYRO: (f32, f32, f32) = (0.083, -0.019, 0.011);
 const BIAS_ACC: (f32, f32, f32) = (0.024, -0.009, -0.104);
 const ALPHA: f32 = 0.95;
+
+#[derive(Serialize)]
+struct Angles {
+    roll: f32,
+    pitch: f32,
+}
 
 struct KalmanFilter {
     estimate: f32,
@@ -163,7 +171,14 @@ fn main() -> Result<()> {
                 angle_roll, angle_pitch,
                 curr.0, curr.1
             );
-            socket.send_to(message.as_bytes(), server_address).unwrap();
+            //socket.send_to(message.as_bytes(), server_address).unwrap();
+
+            let angles = Angles {
+                roll: curr.0,
+                pitch: curr.1,
+            };
+            let encoded = serialize(&angles).expect("Failed to serialize struct");
+            socket.send_to(&encoded, server_address)?;
         }
 
         thread::sleep(Duration::from_millis(5));

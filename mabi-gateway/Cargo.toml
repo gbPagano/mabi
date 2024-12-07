@@ -1,5 +1,5 @@
 [package]
-name = "mabi-receiver"
+name = "mabi-gateway"
 version = "0.1.0"
 authors = ["gbPagano <guilhermebpagano@gmail.com>"]
 edition = "2021"
@@ -7,7 +7,7 @@ resolver = "2"
 rust-version = "1.77"
 
 [[bin]]
-name = "mabi-receiver"
+name = "mabi-gateway"
 harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
 
 [profile.release]
