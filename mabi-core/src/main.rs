@@ -1,11 +1,11 @@
 use bincode::serialize;
 use gilrs::{Axis, Button, EventType, Gilrs};
-use mabi_rs::servo::Servo;
+use mabi_core::servo::Servo;
 use pwm_pca9685::Channel;
 use serde::Serialize;
 use std::net::UdpSocket;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 fn main() {
     let mut gilrs = Gilrs::new().unwrap();
@@ -16,18 +16,18 @@ fn main() {
 
     let mut arm = Arm {
         base: Servo::new(Channel::C5, (0, 180), 90),
-        shoulder: Servo::new(Channel::C1, (0, 180), 90),
-        elbow: Servo::new(Channel::C1, (0, 180), 90),
-        wrist_vertical: Servo::new(Channel::C8, (0, 180), 0),
-        wrist_horizontal: Servo::new(Channel::C7, (0, 180), 0),
-        claw: Servo::new(Channel::C1, (0, 180), 90),
+        shoulder: Servo::new(Channel::C7, (0, 180), 145),
+        elbow: Servo::new(Channel::C6, (0, 180), 165),
+        wrist_vertical: Servo::new(Channel::C9, (0, 180), 0),
+        wrist_horizontal: Servo::new(Channel::C8, (0, 180), 0),
+        claw: Servo::new(Channel::C10, (0, 75), 0),
+        speed: 1.,
     };
 
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap(); // Endereço local do sender
-    let receiver_addr = "192.168.15.2:13129"; // Endereço do receiver
+    let receiver_addr = "192.168.15.5:13129"; // Endereço do receiver
     let mut msg_counter = 1;
     loop {
-        let start = Instant::now();
         arm.step();
 
         let datapack = DataPack {
@@ -41,26 +41,21 @@ fn main() {
         //println!("Struct sent! :: {:?}", datapack);
         msg_counter += 1;
         thread::sleep(Duration::from_millis(15));
-    
-        arm.print_angles();
+
+        //arm.print_angles();
+        dbg!(&arm.speed);
         while let Some(event) = gilrs.next_event() {
             match event.event {
                 EventType::AxisChanged(axis, val, _) => {
-                    let val = if val.abs() > 0.04 { val } else { 0.0 };
+                    let val = if val.abs() > 0.1 { val } else { 0.0 };
                     match axis {
-                        Axis::LeftStickX => {
-                            //println!("Left Stick X moved: {val}");
-                        }
                         Axis::LeftStickY => {
                             println!("Left Stick Y moved: {val}");
-                            arm.wrist_vertical.speed = val * 2.;
-                        }
-                        Axis::RightStickX => {
-                            //println!("Right Stick X moved: {val}");
+                            arm.elbow.speed = val * 1.;
                         }
                         Axis::RightStickY => {
                             println!("Right Stick Y moved: {val}");
-                            arm.wrist_horizontal.speed = val * 2.;
+                            arm.shoulder.speed = -val * 1.;
                         }
                         _ => (),
                     }
@@ -68,19 +63,43 @@ fn main() {
                 EventType::ButtonChanged(button, val, _) => match button {
                     Button::RightTrigger2 => {
                         //println!("pressing: R2 :: {val}");
-                        arm.base.speed = val * 2.;
+                        arm.base.speed = val * 2. * arm.speed;
                     }
                     Button::LeftTrigger2 => {
                         //println!("pressing: L2 :: {val}");
-                        arm.base.speed = -val * 2.;
+                        arm.base.speed = -val * 2. * arm.speed;
+                    }
+                    Button::South => {
+                        arm.wrist_vertical.speed = -val * 0.75 * arm.speed;
+                    }
+                    Button::North => {
+                        arm.wrist_vertical.speed = val * 0.75 * arm.speed;
+                    }
+                    Button::RightTrigger => {
+                        arm.wrist_horizontal.speed = -val * 0.85 * arm.speed;
+                    }
+                    Button::LeftTrigger => {
+                        arm.wrist_horizontal.speed = val * 0.85 * arm.speed;
+                    }
+                    Button::East => {
+                        arm.claw.speed = val * 0.75 * arm.speed;
+                    }
+                    Button::West => {
+                        arm.claw.speed = -val * 0.75 * arm.speed;
                     }
                     _ => (),
                 },
+                EventType::ButtonPressed(Button::DPadUp, ..) => {
+                    arm.speed += 0.2;
+                    arm.speed = arm.speed.clamp(0.2, 3.0);
+                }
+                EventType::ButtonPressed(Button::DPadDown, ..) => {
+                    arm.speed -= 0.2;
+                    arm.speed = arm.speed.clamp(0.2, 3.0);
+                }
                 _ => (),
             };
         }
-        let duration = start.elapsed(); // Calcula o tempo decorrido
-                                        //println!("levou {:?}", duration);
     }
 }
 
@@ -99,6 +118,7 @@ struct Arm {
     pub wrist_vertical: Servo,
     pub wrist_horizontal: Servo,
     pub claw: Servo,
+    pub speed: f32,
 }
 
 impl Arm {
