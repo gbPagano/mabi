@@ -1,11 +1,30 @@
-use bincode::serialize;
+use bincode::{deserialize, serialize};
 use gilrs::{Axis, Button, EventType, Gilrs};
 use mabi_core::servo::Servo;
 use pwm_pca9685::Channel;
+use serde::Deserialize;
 use serde::Serialize;
 use std::net::UdpSocket;
 use std::thread;
 use std::time::Duration;
+
+#[derive(Debug, Deserialize)]
+struct SensorDataPack {
+    gyro: Gyro,
+    angles: Angles,
+}
+
+#[derive(Deserialize, Debug)]
+struct Gyro {
+    roll: f32,
+    pitch: f32,
+}
+
+#[derive(Deserialize, Debug)]
+struct Angles {
+    roll: f32,
+    pitch: f32,
+}
 
 fn main() {
     let mut gilrs = Gilrs::new().unwrap();
@@ -20,15 +39,40 @@ fn main() {
         elbow: Servo::new(Channel::C6, (0, 180), 165),
         wrist_vertical: Servo::new(Channel::C9, (0, 180), 0),
         wrist_horizontal: Servo::new(Channel::C8, (0, 180), 0),
-        claw: Servo::new(Channel::C10, (0, 75), 0),
+        claw: Servo::new(Channel::C10, (0, 70), 0),
         speed: 1.,
     };
 
-    let socket = UdpSocket::bind("0.0.0.0:0").unwrap(); // Endereço local do sender
-    let receiver_addr = "192.168.15.5:13129"; // Endereço do receiver
+    let socket = UdpSocket::bind("0.0.0.0:8080").unwrap(); // Endereço local do sender
+    let receiver_addr = "192.168.15.3:13129"; // Endereço do receiver
+
+    let mut buf = [0; 128];
+
     let mut msg_counter = 1;
     loop {
         arm.step();
+
+        let (amt, src) = socket.recv_from(&mut buf).unwrap();
+
+        //println!("Received {} bytes from {}", amt, src);
+
+        if let Ok(datapack) = deserialize::<SensorDataPack>(&buf[..amt]) {
+            let max_delta = 15.0; // Limite máximo de variação por ciclo
+            let delta = (datapack.angles.roll - arm.claw.real_pos) / 2.0;
+
+            // Limita o delta para evitar mudanças bruscas
+            let delta = if delta.abs() > max_delta {
+                delta.signum() * max_delta
+            } else {
+                delta
+            };
+            //arm.claw.real_pos += (datapack.angles.roll - arm.claw.real_pos) / 2.;
+            //arm.claw.real_pos += delta;
+            //arm.claw.speed = delta.signum() * 3. * arm.speed;
+            arm.claw.real_pos = datapack.angles.roll;
+            //arm.claw.real_pos += datapack.gyro.roll * 1000.;
+            dbg!(datapack);
+        }
 
         let datapack = DataPack {
             idx: msg_counter,
@@ -40,10 +84,10 @@ fn main() {
         socket.send_to(&encoded, receiver_addr).unwrap();
         //println!("Struct sent! :: {:?}", datapack);
         msg_counter += 1;
-        thread::sleep(Duration::from_millis(15));
+        //thread::sleep(Duration::from_millis(15));
 
-        //arm.print_angles();
-        dbg!(&arm.speed);
+        arm.print_angles();
+        //dbg!(&arm.speed);
         while let Some(event) = gilrs.next_event() {
             match event.event {
                 EventType::AxisChanged(axis, val, _) => {

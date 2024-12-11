@@ -6,7 +6,7 @@ pub struct Servo {
     pub angle_range: (u8, u8),
     pub curr_duty: u16,
     pub speed: f32, // step speed
-    real_pos: f32, // in angle
+    pub real_pos: f32, // in angle
 }
 
 impl Servo {
