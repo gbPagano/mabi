@@ -1,11 +1,10 @@
 use pwm_pca9685::Channel;
 
-
 pub struct Servo {
     pub channel: Channel,
     pub angle_range: (u8, u8),
     pub curr_duty: u16,
-    pub speed: f32, // step speed
+    pub speed: f32,    // step speed
     pub real_pos: f32, // in angle
 }
 
@@ -40,7 +39,7 @@ impl Servo {
 
         self.curr_duty = Servo::angle_to_duty(self.real_pos as u8);
     }
-    
+
     pub fn get_channel_idx(&self) -> usize {
         match self.channel {
             Channel::C0 => 0,

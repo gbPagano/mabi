@@ -20,7 +20,7 @@ impl Arm {
         self.claw.step();
     }
 
-    pub fn get_duty_array(&mut self) -> [u16; 16] {
+    pub fn get_duty_array(&self) -> [u16; 16] {
         let mut duty_array = [0; 16];
 
         for s in [
