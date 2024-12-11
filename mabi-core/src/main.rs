@@ -1,33 +1,19 @@
 use bincode::{deserialize, serialize};
 use gilrs::{Axis, Button, EventType, Gilrs};
 use pwm_pca9685::Channel;
-use serde::Deserialize;
-use serde::Serialize;
 use std::net::UdpSocket;
 use std::thread;
 use std::time::Duration;
+use std::sync::{Arc, Mutex};
 
 mod servo;
+mod arm;
+mod datapack;
 
-use crate::servo::Servo;
+use servo::Servo;
+use arm::Arm;
+use datapack::*;
 
-#[derive(Debug, Deserialize)]
-struct SensorDataPack {
-    gyro: Gyro,
-    angles: Angles,
-}
-
-#[derive(Deserialize, Debug)]
-struct Gyro {
-    roll: f32,
-    pitch: f32,
-}
-
-#[derive(Deserialize, Debug)]
-struct Angles {
-    roll: f32,
-    pitch: f32,
-}
 
 fn main() {
     let mut gilrs = Gilrs::new().unwrap();
@@ -150,55 +136,4 @@ fn main() {
     }
 }
 
-#[derive(Serialize, Debug)]
-struct DataPack {
-    idx: u32,
-    on: [u16; 16],
-    off: [u16; 16],
-}
 
-struct Arm {
-    //controller: Pca9685<I2c>,
-    pub base: Servo,
-    pub shoulder: Servo,
-    pub elbow: Servo,
-    pub wrist_vertical: Servo,
-    pub wrist_horizontal: Servo,
-    pub claw: Servo,
-    pub speed: f32,
-}
-
-impl Arm {
-    pub fn step(&mut self) {
-        self.base.step();
-        self.shoulder.step();
-        self.elbow.step();
-        self.wrist_vertical.step();
-        self.wrist_horizontal.step();
-        self.claw.step();
-    }
-
-    pub fn get_duty_array(&mut self) -> [u16; 16] {
-        let mut duty_array = [0; 16];
-
-        for s in [
-            &self.base,
-            &self.shoulder,
-            &self.elbow,
-            &self.wrist_vertical,
-            &self.wrist_horizontal,
-            &self.claw,
-        ] {
-            let idx = s.get_channel_idx();
-            duty_array[idx] = s.curr_duty;
-        }
-
-        duty_array
-    }
-
-    pub fn print_angles(&self) {
-        println!("Angles :: Base={:?}, Shoulder={:?}, Elbow={:?}, Wrist Vert={:?}, Wrist Horiz={:?}, Claw={:?}",
-            self.base.curr_angle(), self.shoulder.curr_angle(), self.elbow.curr_angle(),
-            self.wrist_vertical.curr_angle(), self.wrist_horizontal.curr_angle(), self.claw.curr_angle());
-    }
-}
