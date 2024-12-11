@@ -1,12 +1,15 @@
 use bincode::{deserialize, serialize};
 use gilrs::{Axis, Button, EventType, Gilrs};
-use mabi_core::servo::Servo;
 use pwm_pca9685::Channel;
 use serde::Deserialize;
 use serde::Serialize;
 use std::net::UdpSocket;
 use std::thread;
 use std::time::Duration;
+
+mod servo;
+
+use crate::servo::Servo;
 
 #[derive(Debug, Deserialize)]
 struct SensorDataPack {
