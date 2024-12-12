@@ -7,40 +7,43 @@ pub struct Arm {
     pub wrist_vertical: Servo,
     pub wrist_horizontal: Servo,
     pub claw: Servo,
-    pub speed: f32,
+    pub speed_multiplier: f32,
 }
 
 impl Arm {
-    pub fn step(&mut self) {
-        self.base.step();
-        self.shoulder.step();
-        self.elbow.step();
-        self.wrist_vertical.step();
-        self.wrist_horizontal.step();
-        self.claw.step();
+    pub fn step(&mut self, val: f32) {
+        let speed_multiplier = self.speed_multiplier;
+        for servo in self.servos() {
+            servo.step(val * speed_multiplier);
+        }
     }
 
-    pub fn get_duty_array(&self) -> [u16; 16] {
+    pub fn get_duty_array(&mut self) -> [u16; 16] {
         let mut duty_array = [0; 16];
 
-        for s in [
-            &self.base,
-            &self.shoulder,
-            &self.elbow,
-            &self.wrist_vertical,
-            &self.wrist_horizontal,
-            &self.claw,
-        ] {
-            let idx = s.get_channel_idx();
-            duty_array[idx] = s.curr_duty;
+        for servo in self.servos() {
+            let idx = servo.get_channel_idx();
+            duty_array[idx] = servo.curr_duty;
         }
 
         duty_array
     }
 
-    pub fn print_angles(&self) {
-        println!("Angles :: Base={:?}, Shoulder={:?}, Elbow={:?}, Wrist Vert={:?}, Wrist Horiz={:?}, Claw={:?}",
-            self.base.curr_angle(), self.shoulder.curr_angle(), self.elbow.curr_angle(),
-            self.wrist_vertical.curr_angle(), self.wrist_horizontal.curr_angle(), self.claw.curr_angle());
+    pub fn debug(&self) -> String {
+        format!("Speed:: {:.2}, Angles :: Base={}, Shoulder={}, Elbow={}, Wrist Vert={}, Wrist Horiz={}, Claw={}",
+            self.speed_multiplier, self.base.real_angle(), self.shoulder.real_angle(), self.elbow.real_angle(),
+            self.wrist_vertical.real_angle(), self.wrist_horizontal.real_angle(), self.claw.real_angle())
+    }
+
+    fn servos(&mut self) -> impl Iterator<Item = &mut Servo> {
+        [
+            &mut self.base,
+            &mut self.shoulder,
+            &mut self.elbow,
+            &mut self.wrist_vertical,
+            &mut self.wrist_horizontal,
+            &mut self.claw,
+        ]
+        .into_iter()
     }
 }

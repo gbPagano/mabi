@@ -4,8 +4,8 @@ pub struct Servo {
     pub channel: Channel,
     pub angle_range: (u8, u8),
     pub curr_duty: u16,
-    pub speed: f32,    // step speed
-    pub real_pos: f32, // in angle
+    pub speed: f32, // step speed
+    pub angle: f32,
 }
 
 impl Servo {
@@ -17,12 +17,12 @@ impl Servo {
             channel,
             angle_range,
             curr_duty: Self::angle_to_duty(start_angle),
-            real_pos: start_angle as f32,
+            angle: start_angle as f32,
             speed: 0.,
         }
     }
 
-    pub fn curr_angle(&self) -> u8 {
+    pub fn real_angle(&self) -> u8 {
         (180.0
             * ((self.curr_duty - Self::MIN_DUTY) as f32 / (Self::MAX_DUTY - Self::MIN_DUTY) as f32))
             .round() as u8
@@ -32,12 +32,13 @@ impl Servo {
         ((angle as f32 / 180.) * (Self::MAX_DUTY - Self::MIN_DUTY) as f32) as u16 + Self::MIN_DUTY
     }
 
-    pub fn step(&mut self) {
-        self.real_pos += self.speed;
-        self.real_pos = self.real_pos.min(self.angle_range.1 as f32);
-        self.real_pos = self.real_pos.max(self.angle_range.0 as f32);
+    pub fn step(&mut self, val: f32) {
+        self.angle += self.speed * val;
+        self.angle = self
+            .angle
+            .clamp(self.angle_range.0 as f32, self.angle_range.1 as f32);
 
-        self.curr_duty = Servo::angle_to_duty(self.real_pos as u8);
+        self.curr_duty = Servo::angle_to_duty(self.angle as u8);
     }
 
     pub fn get_channel_idx(&self) -> usize {
@@ -78,20 +79,20 @@ mod tests {
     }
 
     #[test]
-    fn test_get_curr_angle() {
+    fn test_get_angle() {
         let mut servo = Servo {
             channel: Channel::C0,
             angle_range: (0, 0),
             curr_duty: Servo::MIN_DUTY,
-            real_pos: 0.,
+            angle: 0.,
             speed: 0.,
         };
-        assert_eq!(servo.curr_angle(), 0);
+        assert_eq!(servo.real_angle(), 0);
 
         servo.curr_duty = Servo::MAX_DUTY;
-        assert_eq!(servo.curr_angle(), 180);
+        assert_eq!(servo.real_angle(), 180);
 
         servo.curr_duty = (Servo::MAX_DUTY - Servo::MIN_DUTY) / 2 + Servo::MIN_DUTY;
-        assert_eq!(servo.curr_angle(), 90);
+        assert_eq!(servo.real_angle(), 90);
     }
 }

@@ -10,7 +10,8 @@ use crate::datapack::DataPack;
 pub fn thread_loop(shared_arm: Arc<Mutex<Arm>>) -> ! {
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
     let receiver_addr = "192.168.15.3:13129";
-
+    
+    let delta_time = 0.015; // 15ms
     let mut msg_counter = 1;
     loop {
         let mut datapack = DataPack {
@@ -20,8 +21,8 @@ pub fn thread_loop(shared_arm: Arc<Mutex<Arm>>) -> ! {
         };
         {
             let mut arm = shared_arm.lock().unwrap();
-            arm.step();
-            arm.print_angles();
+            arm.step(delta_time);
+            println!("{}", arm.debug());
 
             datapack.off = arm.get_duty_array();
         }
@@ -29,6 +30,6 @@ pub fn thread_loop(shared_arm: Arc<Mutex<Arm>>) -> ! {
         socket.send_to(&encoded, receiver_addr).unwrap();
         msg_counter += 1;
 
-        thread::sleep(Duration::from_millis(15));
+        thread::sleep(Duration::from_secs_f32(delta_time));
     }
 }

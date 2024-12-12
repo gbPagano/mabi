@@ -20,7 +20,7 @@ fn main() -> ! {
         wrist_vertical: Servo::new(Channel::C9, (0, 180), 0),
         wrist_horizontal: Servo::new(Channel::C8, (0, 180), 0),
         claw: Servo::new(Channel::C10, (0, 70), 0),
-        speed: 1.,
+        speed_multiplier: 1.,
     };
     let shared_arm = Arc::new(Mutex::new(arm));
 

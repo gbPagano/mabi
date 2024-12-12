@@ -21,7 +21,7 @@ pub fn thead_loop(shared_arm: Arc<Mutex<Arm>>) -> ! {
             //} else {
             //    delta
             //};
-            arm.claw.real_pos = datapack.angles.roll;
+            arm.claw.angle = datapack.angles.roll;
         }
     }
 }
