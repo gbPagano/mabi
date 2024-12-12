@@ -13,15 +13,9 @@ pub fn thead_loop(shared_arm: Arc<Mutex<Arm>>) -> ! {
         let (amt, _from) = socket.recv_from(&mut buf).unwrap();
         if let Ok(datapack) = deserialize::<SensorDataPack>(&buf[..amt]) {
             let mut arm = shared_arm.lock().unwrap();
-            //let max_delta = 15.0;
-            //let delta = (datapack.angles.roll - arm.claw.real_pos) / 2.0;
-
-            //let delta = if delta.abs() > max_delta {
-            //    delta.signum() * max_delta
-            //} else {
-            //    delta
-            //};
-            arm.claw.angle = datapack.angles.roll;
+            let delta = datapack.angles.roll - arm.claw.angle;
+            //arm.claw.angle = datapack.angles.roll;
+            arm.claw.speed = delta * 2.;
         }
     }
 }
