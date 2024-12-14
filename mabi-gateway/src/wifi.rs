@@ -1,9 +1,8 @@
 use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 
-const SSID: &str = "Pagano-2.4GHz";
-const PASSWORD: &str = "roteador186!";
-
+const SSID: &str = "S22-gbp";
+const PASSWORD: &str = "roteadorS22!";
 
 pub fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<()> {
     let wifi_configuration: Configuration = Configuration::Client(ClientConfiguration {
@@ -31,4 +30,3 @@ pub fn connect_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result
 
     Ok(())
 }
-

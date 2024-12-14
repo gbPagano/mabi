@@ -9,7 +9,7 @@ use crate::datapack::DataPack;
 
 pub fn thread_loop(shared_arm: Arc<Mutex<Arm>>) -> ! {
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-    let receiver_addr = "192.168.15.3:13129";
+    let receiver_addr = "192.168.224.128:13129";
     
     let delta_time = 0.015; // 15ms
     let mut msg_counter = 1;

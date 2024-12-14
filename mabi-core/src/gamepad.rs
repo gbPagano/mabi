@@ -43,10 +43,10 @@ fn handle_axis_event(axis: Axis, val: f32, arm: &mut Arm) {
 fn handle_button_event(button: Button, val: f32, arm: &mut Arm) {
     match button {
         Button::RightTrigger2 => {
-            arm.base.speed = val * 90.;
+            arm.base.speed = -val * 90.;
         }
         Button::LeftTrigger2 => {
-            arm.base.speed = -val * 90.;
+            arm.base.speed = val * 90.;
         }
         Button::South => {
             arm.wrist_vertical.speed = -val * 90.;
@@ -54,18 +54,18 @@ fn handle_button_event(button: Button, val: f32, arm: &mut Arm) {
         Button::North => {
             arm.wrist_vertical.speed = val * 90.;
         }
-        Button::RightTrigger => {
-            arm.wrist_horizontal.speed = -val * 90.;
-        }
-        Button::LeftTrigger => {
+        Button::West => {
             arm.wrist_horizontal.speed = val * 90.;
         }
         Button::East => {
-            arm.claw.speed = val * 90.;
+            arm.wrist_horizontal.speed = -val * 90.;
         }
-        Button::West => {
-            arm.claw.speed = -val * 90.;
-        }
+        //Button::East => {
+        //    arm.claw.speed = val * 90.;
+        //}
+        //Button::West => {
+        //    arm.claw.speed = -val * 90.;
+        //}
         Button::DPadUp => {
             arm.speed_multiplier += val * 0.2;
             arm.speed_multiplier = arm.speed_multiplier.clamp(0.2, 3.0);

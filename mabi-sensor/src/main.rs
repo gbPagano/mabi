@@ -21,8 +21,8 @@ use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::wifi::{BlockingWifi, EspWifi};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 
-const SSID: &str = "Pagano-2.4GHz";
-const PASSWORD: &str = "roteador186!";
+const SSID: &str = "S22-gbp";
+const PASSWORD: &str = "roteadorS22!";
 
 pub const PI: f32 = core::f32::consts::PI;
 pub const PI_180: f32 = PI / 180.0;
@@ -100,7 +100,7 @@ fn main() -> Result<()> {
     let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
     println!("Wifi DHCP info: {:?}", ip_info);
 
-    let server_address = "192.168.15.8:8080";
+    let server_address = "192.168.224.187:13129";
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
 
     let mut last_time = std::time::Instant::now();
