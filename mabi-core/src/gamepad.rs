@@ -60,12 +60,12 @@ fn handle_button_event(button: Button, val: f32, arm: &mut Arm) {
         Button::East => {
             arm.wrist_horizontal.speed = -val * 90.;
         }
-        //Button::East => {
-        //    arm.claw.speed = val * 90.;
-        //}
-        //Button::West => {
-        //    arm.claw.speed = -val * 90.;
-        //}
+        Button::RightTrigger => {
+            arm.claw.speed = val * 90.;
+        }
+        Button::LeftTrigger => {
+            arm.claw.speed = -val * 90.;
+        }
         Button::DPadUp => {
             arm.speed_multiplier += val * 0.2;
             arm.speed_multiplier = arm.speed_multiplier.clamp(0.2, 3.0);
