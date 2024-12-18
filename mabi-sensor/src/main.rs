@@ -86,10 +86,9 @@ fn main() -> Result<()> {
         if last_print.elapsed().as_millis() >= 300 {
             last_print = Instant::now();
             println!("{:?}", angles);
-
-            let encoded = serialize(&angles).expect("Failed to serialize struct");
-            socket.send_to(&encoded, server_address)?;
         }
+        let encoded = serialize(&angles).expect("Failed to serialize struct");
+        socket.send_to(&encoded, server_address)?;
 
         thread::sleep(Duration::from_millis(15));
     }
