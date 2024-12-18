@@ -1,0 +1,4 @@
+export WIFI_SSID="S22-gbp"
+export WIFI_PASSWORD="roteadorS22!"
+export GATEWAY_IP="192.168.224.128:13129"
+export CORE_IP="192.168.224.187:13129"

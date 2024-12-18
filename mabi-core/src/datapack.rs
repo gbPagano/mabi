@@ -7,18 +7,6 @@ pub struct DataPack {
     pub off: [u16; 16],
 }
 
-#[derive(Debug, Deserialize)]
-pub struct SensorDataPack {
-    pub gyro: Gyro,
-    pub angles: Angles,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Gyro {
-    pub roll: f32,
-    pub pitch: f32,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct Angles {
     pub roll: f32,

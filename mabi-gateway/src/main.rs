@@ -7,8 +7,6 @@ use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 use pwm_pca9685::{Address, Pca9685};
 use serde::Deserialize;
 use std::net::UdpSocket;
-use std::thread;
-use std::time::{Duration, Instant};
 
 mod wifi;
 
@@ -31,7 +29,7 @@ fn main() -> Result<()> {
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
         sys_loop,
     )?;
-    wifi::connect_wifi(&mut wifi).expect("Can't connect wifi");
+    wifi::connect_wifi(&mut wifi)?;
 
     let sda = peripherals.pins.gpio21;
     let scl = peripherals.pins.gpio22;
@@ -47,15 +45,12 @@ fn main() -> Result<()> {
 
     let mut last_msg_idx = 0;
     loop {
-        let start = Instant::now();
         let (amt, src) = socket.recv_from(&mut buf)?;
-
-        //println!("Received {} bytes from {}", amt, src);
 
         if let Ok(datapack) = deserialize::<DataPack>(&buf[..amt]) {
             println!(
-                "Received :: idx={} duty_arr={:?}",
-                datapack.idx, datapack.off
+                "Received :: idx={} duty_arr={:?} from={}",
+                datapack.idx, datapack.off, src
             );
 
             if datapack.idx > last_msg_idx || datapack.idx <= 50 {
@@ -63,7 +58,6 @@ fn main() -> Result<()> {
                     .set_all_on_off(&datapack.on, &datapack.off)
                     .unwrap();
                 last_msg_idx = datapack.idx;
-                println!("Iteration in {:?}", start.elapsed());
             }
         }
     }

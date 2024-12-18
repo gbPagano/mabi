@@ -7,10 +7,12 @@ use std::time::Duration;
 use crate::arm::Arm;
 use crate::datapack::DataPack;
 
+const RECEIVER_IP: Option<&str> = option_env!("GATEWAY_IP");
+
 pub fn thread_loop(shared_arm: Arc<Mutex<Arm>>) -> ! {
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-    let receiver_addr = "192.168.224.128:13129";
-    
+    let receiver_addr = RECEIVER_IP.expect("Environment variable not set");
+
     let delta_time = 0.015; // 15ms
     let mut msg_counter = 1;
     loop {

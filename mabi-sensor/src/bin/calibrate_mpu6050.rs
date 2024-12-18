@@ -10,15 +10,14 @@ pub const PI_180: f32 = PI / 180.0;
 fn main() {
     let peripherals = Peripherals::take().unwrap();
 
-    let sda = peripherals.pins.gpio21; // GPIO21 padrão para SDA no ESP32
-    let scl = peripherals.pins.gpio22; // GPIO22 padrão para SCL no ESP32
+    let sda = peripherals.pins.gpio21;
+    let scl = peripherals.pins.gpio22;
 
     let config = I2cConfig::default();
     let i2c = I2cDriver::new(peripherals.i2c0, sda, scl, &config).unwrap();
 
     let mut delay = Ets;
     let mut mpu = Mpu6050::new(i2c);
-    //let mut mpu = Mpu6050::new_with_sens(i2c, device::AccelRange::G2, device::GyroRange::D500);
     mpu.init(&mut delay).unwrap();
 
     println!("Starting measures, all should be zero");
