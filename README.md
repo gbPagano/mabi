@@ -1,56 +1,55 @@
-## MABI
+# MABI
+## Equipe Poggers
 
-<div style="display: flex; align-items: center; gap: 15px;">
-  <img src="assets/image-2.png" alt="First Image" width="15%">
-  <p>
-    Este repositório contém o código e a documentação do projeto desenvolvido para a Maratona de Biorrobótica (MABI), organizado pelo PET Biomédica da Universidade Federal de Uberlândia (UFU). O projeto consiste no controle de um braço robótico utilizando dois métodos distintos: um controle remoto convencional e um sistema baseado em acelerômetro e giroscópio para o movimento da pinça. Isso será necessário para cumprir com os desafios propostos para o campeonato.
-  </p>
-</div>
+<img src="assets/pogg.png" width="15%" /> Este projeto foi desenvolvido para a **Maratona de Biorrobótica (MABI)**, realizada em 2024, 
+onde nossa equipe, **Poggers**, alcançou o **primeiro lugar**. Ele envolve o controle de um braço robótico utilizando dois métodos: 
+um controle remoto convencional e um sistema baseado em acelerômetro e giroscópio para movimentar a garra.
 
-### Funcionalidades
+-----
 
-- Controle remoto: movimentação dos eixos do braço e abertura/fechamento da pinça.
-- Controle baseado em sensores: utilização de acelerômetro e giroscópio para traduzir movimentos em comandos para o braço.
-- Interface com gamepad: suporte para joysticks através da biblioteca Gilrs.
-- Movimentação fluida: servos controlados via PWM com ajuste fino dos ângulos.
+## Arquitetura do Projeto
+O projeto consiste em 3 módulos, sendo eles:
 
-### Tecnologias e Ferramentas
+## mabi-sensor:
+Captura os dados do sensor MPU6050 e envia o ângulo lido para o mabi-core para processamento. O envio é feito a cada 15 ms via UDP.
 
-- Linguagem: Rust 🦀
-- Microcontrolador: ESP-IDF (suporte ao ESP32)
-- Sensores: Acelerômetro e giroscópio (compatíveis com I2C)
-- PWM Driver: PCA9685 para controle dos servos
-- Bibliotecas:
-    - gilrs: para suporte ao controle remoto
-    - pwm_pca9685: para controle PWM
-    - rppal: interface com barramento I2C no Raspberry Pi
+## mabi-core:
+Recebe os dados de ângulo lido pelo mabi-sensor, gerencia os inputs de gamepad e controla a lógica de movimentação e suavização do robô.
+
+A partir disso, definimos o duty cycle de PWM para controle dos ângulos do robô e enviamos via UDP para o mabi-gateway a cada 15 ms.
+
+Esse módulo é executado no computador (no nosso caso, usamos Linux), e o gamepad também é conectado diretamente no computador.
+
+## mabi-gateway:
+Encaminha os dados processados pelo mabi-core para o robô. Os dados são recebidos via UDP por uma ESP32, 
+e o controle do robô é feito pelo controlador PWM PCA9685.
+
+```mermaid
+graph LR
+    A[mabi-sensor<br>ESP32 + MPU6050] -->|Raw Data<br> via UDP| B[mabi-core<br>Linux]
+    B -->|Processed Data<br>via UDP| C[mabi-gateway<br>ESP32 + PCA9685]
+    C -->|Forward Data| D[Robot]
+    E[Gamepad] -->|Control Signals<br>connected on Linux| B
+```
+-----
+
+## Modelo Físico
+
+O braço foi construído a partir de filamentos de PLA nas cores azul e cinza e possui 6 eixos de liberdade. 
+O modelo utilizado pode ser encontrado no link: [Brazo Robótico Arduino DIY con Control de Smartphone 2023](https://cults3d.com/en/3d-model/gadget/brazo-robotico-arduino-diy-con-control-de-smartphone-2023).
+
+Nesse link também há informações sobre quais servo motores utilizar. No nosso caso, utilizamos os servos SG90 e MG995.
+
+O modelo 3D foi feito para ser utilizado com um Arduino UNO, então fizemos algumas adaptações para colocar a ESP32 e o controlador PWM no seu interior.
 
 
+<p align="center">
+  <img src="assets/image_1.jpg" width="400" />
+  <img src="assets/image_2.jpg" width="400" />
+</p>
 
-## Como executar
 
-### Pré-requisitos:
-    - Rust e cargo instalados (versão estável).
-    - Ambiente configurado para ESP-IDF.
-    - Dependências instaladas via cargo.
-### Clone o repositório:
-`git clone https://github.com/sua-conta/mabi-rs.git`
-`cd mabi-rs`
-
-> Copie e cole o https correspondente com o nome da sua conta!
-
-### Compilação e execução:
-`cargo build`
-`cargo run`
-
-### Modelo físico
-<div style="display: flex; align-items: center; gap: 15px;">
-  <img src="assets/image.png" alt="First Image" width="20%">
-  <img src="assets/image-3.png" alt="First Image" width="20%">
-  <img src="assets/image-4.png" alt="First Image" width="20%">
-  <p>
-    Essa é a nossa garra, construída a partir de filamentos de PLA nas cores azul e cinza. Possui vários eixos de liberdade para poder movimentar a garra em diversas direções. Possui apenas dois "dedos" para simular o movimento de pinça, requerido para completar os desafios propostos, que envolvem a sensibilidade e o movimento de pinçar. Os motores utilizados também são suficientes pare que seja possível realizar tarefas que demandem um pouco de tração da garra. Contudo, cabe ressaltar que por ser de um material de plástico, qualquer força realizada de maneira imprudente pode levar ao mal funcionamento de alguma parte, podendo inclusive quebrar a garra robótica.
-  </p>
-  </div>
-  
-
+<p align="center">
+  <img src="assets/image_3.jpg" width="400" />
+  <img src="assets/image_4.jpg" width="400" />
+</p>
